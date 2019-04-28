@@ -1,50 +1,49 @@
 const router = require('express').Router();
-const passport = require('passport');
+const dauth = require('dauth-verifier');
+
+const options = {
+  maxAge: 1000 * 60 * 60, // would expire after 60 minutes
+  httpOnly: true, // The cookie only accessible by the web server
+};
 
 // Models
 const User = require('../models/User');
-
-router.get('/users/signup', (req, res) => {
-  res.render('users/signup');
-});
-
-router.post('/users/signup', async (req, res) => {
-  let errors = [];
-  const { name, email, password, confirm_password } = req.body;
-  if(password != confirm_password) {
-    errors.push({text: 'Passwords do not match.'});
-  }
-  if(password.length < 4) {
-    errors.push({text: 'Passwords must be at least 4 characters.'})
-  }
-  if(errors.length > 0){
-    res.render('users/signup', {errors, name, email, password, confirm_password});
-  } else {
-    // Look for email coincidence
-    const emailUser = await User.findOne({email: email});
-    if(emailUser) {
-      req.flash('error_msg', 'The Email is already in use.');
-      res.redirect('/users/signup');
-    } else {
-      // Saving a New User
-      const newUser = new User({name, email, password});
-      newUser.password = await newUser.encryptPassword(password);
-      await newUser.save();
-      req.flash('success_msg', 'You are registered.');
-      res.redirect('/users/signin');
-    }
-  }
-});
 
 router.get('/users/signin', (req, res) => {
   res.render('users/signin');
 });
 
-router.post('/users/signin', passport.authenticate('local', {
-  successRedirect: '/notes',
-  failureRedirect: '/users/signin',
-  failureFlash: true
-}));
+router.get('/users/sign', (req, res) => {
+  const username = req.query.username;
+  const email = req.query.email;
+  const dob = res.dob;
+  const code = req.query.code;
+  const hashcode = req.query.hashcode;
+
+  if (username != undefined) {
+    console.log(username);
+    dauth
+      .verify(username, code, hashcode, email, dob)
+      .then(async (data) => {
+        console.log(data);
+        const user = await User.findOne({ "username": username });
+        if (user) {
+          console.log(`Jel ${user._id}`);
+          res.cookie('id3', String(user._id), options);
+          return res.redirect('/notes');
+        }
+        const newUser = new User({ username });
+        await newUser.save();
+        console.log(`Jelo ${newUser._id}`);
+        res.cookie('id3', String(newUser._id), options);
+        return res.redirect('/notes');
+      })
+      .catch((error) => {
+        console.log(error);
+        console.log('Fail');
+      });
+  }
+});
 
 router.get('/users/logout', (req, res) => {
   req.logout();
