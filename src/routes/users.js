@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const dauth = require('dauth-verifier');
+const passport = require('passport');
 
 const options = {
   maxAge: 1000 * 60 * 60, // would expire after 60 minutes
@@ -50,5 +51,18 @@ router.get('/users/logout', (req, res) => {
   req.flash('success_msg', 'You are logged out now.');
   res.redirect('/users/signin');
 });
+
+router.get(
+  '/users/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+router.get(
+  '/users/google/callback',
+  passport.authenticate('google', {
+    successRedirect: '/notes',
+    failureRedirect: '/',
+  })
+);
 
 module.exports = router;

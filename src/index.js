@@ -5,6 +5,8 @@ const methodOverride = require('method-override');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const flash = require('connect-flash');
+const passport = require('passport');
+const config = require('./config/config');
 
 // Initializations
 const app = express();
@@ -21,12 +23,15 @@ app.engine('.hbs', exphbs({
   extname: '.hbs'
 }));
 app.set('view engine', '.hbs');
+app.use(passport.initialize());
+app.use(passport.session()); 
 
 // middlewares
 app.use(express.urlencoded({extended: false}));
 app.use(methodOverride('_method'));;
 
 // routes
+require("./config/passport")(passport, config); // pass passport for configuration
 app.use(require('./routes'));
 app.use(require('./routes/users'));
 app.use(require('./routes/notes'));
