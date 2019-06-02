@@ -38,7 +38,7 @@ router.post('/notes/new-note', async (req, res) => {
 // Get All Notes
 router.get('/notes', async (req, res) => {
   const notes = await Note.find({ user: mongoose.Types.ObjectId(req.cookies.id3) });
-  res.render('notes/all-notes', { notes });
+  res.render('notes/all-notes', { notes: notes, signin: true});
 });
 
 // Edit Notes
